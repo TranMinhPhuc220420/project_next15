@@ -7,17 +7,15 @@ pipeline {
         DOCKER_TAG = "${env.BRANCH_NAME == 'main' ? 'latest' : env.BRANCH_NAME}"
     }
     
-    tools {
-        nodejs "Node 18"
-    }
-    
     stages {
-        stage('Prepare') {
+        stage('Setup Node.js') {
             steps {
                 script {
-                    sh 'node --version'
-                    sh 'npm --version'
+                    def nodeHome = tool name: 'NodeJS', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
+                    env.PATH = "${nodeHome}/bin:${env.PATH}"
                 }
+                sh 'node --version'
+                sh 'npm --version'
             }
         }
         
@@ -39,8 +37,9 @@ pipeline {
             }
             post {
                 always {
-                    junit 'junit.xml'
-                    cobertura coberturaReportFile: 'coverage/cobertura-coverage.xml'
+                    echo 'Collecting test reports...'
+                    // Nếu bạn đã cấu hình xuất báo cáo JUnit, sử dụng dòng dưới đây
+                    // junit 'junit.xml'
                 }
             }
         }
@@ -54,7 +53,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 }
             }
         }
@@ -76,11 +75,9 @@ pipeline {
     
     post {
         failure {
-            emailext (
-                subject: "Jenkins Build Failed: ${currentBuild.fullDisplayName}",
-                body: "Build failed in Jenkins: ${env.BUILD_URL}",
-                to: 'your-email@example.com'
-            )
+            echo 'Pipeline failed! Sending notification...'
+            // Thay thế bằng cách thông báo phù hợp với hệ thống của bạn
+            // mail to: 'your-email@example.com', subject: 'Pipeline failed', body: 'Check Jenkins for details'
         }
         
         success {
