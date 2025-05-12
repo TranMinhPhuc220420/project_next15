@@ -4,7 +4,7 @@ pipeline {
   stages {
     stage('Install dependencies') {
       steps {
-        sh 'npm ci' // Hoặc 'npm install' nếu không dùng lockfile
+        sh 'npm install' // Hoặc 'npm install' nếu không dùng lockfile
       }
     }
 
