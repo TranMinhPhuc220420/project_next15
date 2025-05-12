@@ -1,36 +1,30 @@
 pipeline {
-  agent {
-      docker {
-          image 'node:lts-buster-slim'
-          args '-p 3000:3000'
-      }
-  }
-  environment {
-      CI = 'true'
-  }
-
-  stages {
-    stage('Install dependencies') {
-      steps {
-        sh 'npm install' // Hoặc 'npm install' nếu không dùng lockfile
-      }
+    agent {
+        docker {
+            image 'node:lts-buster-slim'
+            args '-p 3000:3000'
+        }
     }
-
-    stage('Run Tests') {
-      steps {
-        sh 'npm run test:ci'
-      }
+    environment {
+        CI = 'true'
     }
-
-    stage('Archive coverage') {
-      steps {
-        junit 'coverage/junit.xml' // nếu bạn chuyển coverage sang định dạng junit
-        publishHTML(target: [
-          reportName : 'Coverage Report',
-          reportDir  : 'coverage',
-          reportFiles: 'index.html',
-        ])
-      }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh './jenkins/scripts/test.sh'
+            }
+        }
+        stage('Deliver') {
+            steps {
+                sh './jenkins/scripts/deliver.sh'
+                input message: 'Finished using the web site? (Click "Proceed" to continue)'
+                sh './jenkins/scripts/kill.sh'
+            }
+        }
     }
-  }
 }
